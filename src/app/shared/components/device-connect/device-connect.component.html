@@ -1,0 +1,72 @@
+<ion-header>
+  <ion-toolbar color="success">
+    <ion-buttons slot="start">
+      <ion-button>
+        <ion-icon name="construct-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title *ngIf="event$ | async as event">
+      Alarm
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="drawer.toggleState()">
+        <ion-icon name="arrow-up-circle-outline" [hidden]="isOpened"></ion-icon>
+        <ion-icon
+          name="arrow-down-circle-outline"
+          [hidden]="!isOpened"
+        ></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="ion-padding h-100">
+  <div class="device-well" *ngIf="event$ | async as event">
+    <ng-container *ngIf="event.type === 'ready'">
+      <ng-container *ngIf="deviceCount$ | async as count">
+        <p>Connected Vehicles : {{ count }}</p>
+      </ng-container>
+    </ng-container>
+    <ng-container *ngIf="rule$ | async as rule; else ruleTemplate">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Alert</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-item>
+            <ion-label>
+              <p>Distance:{{ rule.distance }}</p>
+              <p>Sound:{{ rule.sound }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+    </ng-container>
+    <ng-template #ruleTemplate>
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Create Alert</ion-card-title>
+        </ion-card-header>
+
+        <ion-card-content>
+          <ion-item>
+            <ion-label position="floating">Distance(km)</ion-label>
+            <ion-input
+              placeholder="192.168.0.1"
+              #distance
+              value="5"
+            ></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label>Sound</ion-label>
+            <ion-checkbox checked="true" #sound></ion-checkbox>
+          </ion-item>
+          <ion-item>
+            <ion-button (click)="onAddAlert(distance.value, sound.value)">
+              Submit
+            </ion-button>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+    </ng-template>
+  </div>
+</ion-content>

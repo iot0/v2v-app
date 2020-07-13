@@ -1,0 +1,34 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Set Device Ip</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        fill="solid"
+        (click)="onClose()"
+        color="danger"
+        fill="outline"
+      >
+        Cancel
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <ion-list lines="inset">
+    <ion-item>
+      <ion-label>
+        <ion-text color="primary">
+          <h2>SYNC YOUR DEVICE</h2>
+        </ion-text>
+        <p>Add your device ip in this field</p>
+      </ion-label>
+    </ion-item>
+
+    <ion-item>
+      <ion-input placeholder="192.168.0.1" #input></ion-input>
+      <ion-fab-button (click)="onSync(input.value)">
+        OK
+      </ion-fab-button>
+    </ion-item>
+  </ion-list>
+</ion-content>
