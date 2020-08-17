@@ -1,0 +1,68 @@
+<ion-content>
+  <ion-grid class="ion-no-padding">
+    <ion-row
+      class="ion-no-padding ion-align-items-center ion-justify-content-center"
+    >
+      <ion-col class="ion-no-padding" size-lg="4" size-md="6" size-sm="12">
+        <ion-card *ngIf="auth.user$ | async as user">
+          <ion-card-content>
+            <ion-item>
+              <ion-avatar slot="start">
+                <img [src]="user.photoURL" />
+              </ion-avatar>
+              <ion-label>
+                <h3>{{ user.displayName }}</h3>
+                <p>{{ user.email }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-card-content>
+        </ion-card>
+        <ion-card [hidden]="!(auth.user$ | async)">
+          <ion-card-header>
+            <ion-item>
+              <ion-label>
+                <ion-card-title>Settings</ion-card-title>
+              </ion-label>
+              <ion-button (click)="onSubmit()">
+                Submit
+              </ion-button>
+            </ion-item>
+          </ion-card-header>
+          <form [formGroup]="createForm">
+            <ion-item>
+              <ion-label position="floating">Device Ip</ion-label>
+              <ion-input
+                placeholder="192.168.43.01"
+                formControlName="deviceIp"
+              ></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label position="floating">Radius (in meters)</ion-label>
+              <ion-input
+                type="number"
+                placeholder="10m"
+                formControlName="radius"
+              ></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label>Sound</ion-label>
+              <ion-checkbox formControlName="sound"></ion-checkbox>
+            </ion-item>
+          </form>
+        </ion-card>
+        <ion-list>
+          <ion-item button (click)="onLogin()" *ngIf="!(auth.user$ | async)"
+            >Login</ion-item
+          >
+          <ion-item
+            button
+            *ngIf="auth.user$ | async"
+            (click)="onLogout()"
+            color="danger"
+            >LogOut</ion-item
+          >
+        </ion-list>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

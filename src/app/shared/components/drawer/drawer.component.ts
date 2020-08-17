@@ -1,17 +1,25 @@
-import { Component, OnInit, Input, Output, EventEmitter, ElementRef, Renderer2, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Input,
+  Output,
+  EventEmitter,
+  ElementRef,
+  Renderer2,
+  ViewEncapsulation,
+} from '@angular/core';
 import { DomController, Platform } from '@ionic/angular';
 
 @Component({
   selector: 'app-drawer',
   templateUrl: './drawer.component.html',
   styleUrls: ['./drawer.component.scss'],
-  encapsulation:ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
 export class DrawerComponent {
-
   @Input('options') options: any;
 
-  @Output("change") onChange: EventEmitter<any> = new EventEmitter<any>();
+  @Output('change') onChange: EventEmitter<any> = new EventEmitter<any>();
 
   handleHeight: number = 50;
   bounceBack: boolean = true;
@@ -22,12 +30,15 @@ export class DrawerComponent {
   CLOSE_STATE = 'closed';
   CURRENT_STATE = this.CLOSE_STATE;
 
-  constructor(public element: ElementRef, public renderer: Renderer2, public domCtrl: DomController, public platform: Platform) {
-
-  }
+  containerHeight = this.platform.height() - 112;
+  constructor(
+    public element: ElementRef,
+    public renderer: Renderer2,
+    public domCtrl: DomController,
+    public platform: Platform
+  ) {}
 
   ngAfterViewInit() {
-
     if (this.options.handleHeight) {
       this.handleHeight = this.options.handleHeight;
     }
@@ -44,7 +55,11 @@ export class DrawerComponent {
       this.thresholdTop = this.options.thresholdFromTop;
     }
 
-    this.renderer.setStyle(this.element.nativeElement, 'top', this.platform.height() - this.handleHeight + 'px');
+    this.renderer.setStyle(
+      this.element.nativeElement,
+      'top',
+      this.containerHeight - this.handleHeight + 'px'
+    );
 
     let hammer = new window['Hammer'](this.element.nativeElement);
     hammer.get('pan').set({ direction: window['Hammer'].DIRECTION_VERTICAL });
@@ -52,54 +67,53 @@ export class DrawerComponent {
     hammer.on('pan', (ev) => {
       this.handlePan(ev);
     });
-
   }
 
   handlePan(ev) {
-
     let newTop = ev.center.y;
 
     let bounceToBottom = false;
     let bounceToTop = false;
 
     if (this.bounceBack && ev.isFinal) {
-
       let topDiff = newTop - this.thresholdTop;
-      let bottomDiff = (this.platform.height() - this.thresholdBottom) - newTop;
+      let bottomDiff = this.containerHeight - this.thresholdBottom - newTop;
 
-      topDiff >= bottomDiff ? bounceToBottom = true : bounceToTop = true;
-
+      topDiff >= bottomDiff ? (bounceToBottom = true) : (bounceToTop = true);
     }
 
-    if ((newTop < this.thresholdTop && ev.additionalEvent === "panup") || bounceToTop) {
-
+    if (
+      (newTop < this.thresholdTop && ev.additionalEvent === 'panup') ||
+      bounceToTop
+    ) {
       this.openDrawer();
-
-    } else if (((this.platform.height() - newTop) < this.thresholdBottom && ev.additionalEvent === "pandown") || bounceToBottom) {
-
+    } else if (
+      (this.containerHeight - newTop < this.thresholdBottom &&
+        ev.additionalEvent === 'pandown') ||
+      bounceToBottom
+    ) {
       this.closeDrawer();
-
     } else {
-
       this.renderer.setStyle(this.element.nativeElement, 'transition', 'none');
 
-      if (newTop > 0 && newTop < (this.platform.height() - this.handleHeight)) {
-
-        if (ev.additionalEvent === "panup" || ev.additionalEvent === "pandown") {
-
+      if (newTop > 0 && newTop < this.containerHeight - this.handleHeight) {
+        if (
+          ev.additionalEvent === 'panup' ||
+          ev.additionalEvent === 'pandown'
+        ) {
           this.domCtrl.write(() => {
-            this.renderer.setStyle(this.element.nativeElement, 'top', newTop + 'px');
+            this.renderer.setStyle(
+              this.element.nativeElement,
+              'top',
+              newTop + 'px'
+            );
           });
-
         }
-
       }
-
     }
-
   }
 
-  //TODO:To close/open 
+  //TODO:To close/open
   toggleState() {
     switch (this.CURRENT_STATE) {
       case this.OPEN_STATE:
@@ -114,7 +128,11 @@ export class DrawerComponent {
   //TODO:To open drawer
   openDrawer() {
     this.domCtrl.write(() => {
-      this.renderer.setStyle(this.element.nativeElement, 'transition', 'top 0.5s');
+      this.renderer.setStyle(
+        this.element.nativeElement,
+        'transition',
+        'top 0.5s'
+      );
       this.renderer.setStyle(this.element.nativeElement, 'top', '0px');
     });
 
@@ -128,8 +146,16 @@ export class DrawerComponent {
   //TODO:To close drawer
   closeDrawer() {
     this.domCtrl.write(() => {
-      this.renderer.setStyle(this.element.nativeElement, 'transition', 'top 0.5s');
-      this.renderer.setStyle(this.element.nativeElement, 'top', this.platform.height() - this.handleHeight + 'px');
+      this.renderer.setStyle(
+        this.element.nativeElement,
+        'transition',
+        'top 0.5s'
+      );
+      this.renderer.setStyle(
+        this.element.nativeElement,
+        'top',
+        this.containerHeight - this.handleHeight + 'px'
+      );
     });
 
     //emit event to let the host know it is opened
@@ -137,5 +163,4 @@ export class DrawerComponent {
     //chnage state
     this.CURRENT_STATE = this.CLOSE_STATE;
   }
-
 }

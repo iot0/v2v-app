@@ -1,66 +1,71 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { timer, BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { switchMap, share, shareReplay, map, take, tap } from 'rxjs/operators';
+import {
+  switchMap,
+  share,
+  shareReplay,
+  map,
+  take,
+  tap,
+  filter,
+  catchError,
+} from 'rxjs/operators';
+import { SettingsService } from './settings';
+import { AudioService } from './audio';
 
 interface DeviceAlertRule {
   distance: number;
   sound: boolean;
 }
-interface DeviceData {
+export interface DeviceData {
   id: number;
   lat: any;
   lng: any;
   thisV?: boolean;
 }
-interface DeviceEvent {
-  devices: DeviceData[];
-  alert: boolean;
+export interface DeviceEvent {
+  alert?: boolean;
+  data?: DeviceData[];
+  error?: any;
+  radius?: number;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class DeviceService {
-  alertRule: DeviceAlertRule = null;
+  alarmKey = 'alarm';
   i = 0;
-  private alertRuleSubject$: BehaviorSubject<
-    DeviceAlertRule
-  > = new BehaviorSubject(null);
-  alertRule$: Observable<DeviceAlertRule> = this.alertRuleSubject$.pipe(
-    shareReplay({ refCount: true, bufferSize: 1 })
-  );
-
+  settings;
   private eventTrigger$: BehaviorSubject<string> = new BehaviorSubject(null);
 
   readonly event$: Observable<DeviceEvent> = this.eventTrigger$.pipe(
-    tap((x) => {
-      console.log(x);
-    }),
+    filter((x) => !!x),
     switchMap((x) =>
-      x != null
-        ? this.startTimer(x).pipe(
-            map((x) =>
-              this.checkBoundary(x)
-                ? { ...x, alert: true, radius: this.alertRule.distance }
-                : x
-            )
-          )
-        : throwError('Device not connected :(')
+      this.startTimer(x).pipe(
+        map((x) => this.checkBoundary(x)),
+        catchError((err) => of({ error: err }))
+      )
     ),
     shareReplay({ refCount: true, bufferSize: 1 })
   );
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private settingsService: SettingsService,
+    private audioService: AudioService
+  ) {
+    this.audioService.preload(this.alarmKey, '/assets/alarm.mp3');
+
+    this.settingsService.settings$.subscribe((x) => {
+      if (x) this.settings = x;
+    });
+  }
 
   async setIp(ip) {
     this.eventTrigger$.next(ip);
     return await this.event$.pipe(take(1)).toPromise();
-  }
-
-  addAlertRule(rule: DeviceAlertRule) {
-    this.alertRule = rule;
-    this.alertRuleSubject$.next(rule);
   }
 
   private startTimer(ip): Observable<DeviceEvent> {
@@ -121,7 +126,7 @@ export class DeviceService {
   }
   private getDeviceDataMock(): Observable<DeviceEvent> {
     return of({
-      devices: [
+      data: [
         {
           id: 1,
           thisV: true,
@@ -146,20 +151,34 @@ export class DeviceService {
     return Math.sqrt(dx * dx + dy * dy) <= km;
   }
   private checkBoundary(event: DeviceEvent) {
-    if (this.alertRule) {
-      const nearVs = event.devices.filter((x) => !x.thisV);
-      const thisV = event.devices.filter((x) => x.thisV).pop();
+    let alert = false,
+      radius = this.settings.radius / 1000;
+    if (this.settings && radius && !alert) {
+      const nearVs = event.data.filter((x) => !x.thisV);
+      const thisV = event.data.filter((x) => x.thisV).pop();
 
       for (let i = 0; i < nearVs.length; i++) {
         const nearV = nearVs[i];
         let res = this._arePointsNear(
           { lat: +nearV.lat, lng: +nearV.lng },
           { lat: +thisV.lat, lng: +thisV.lng },
-          this.alertRule.distance
+          radius
         );
 
-        if (res) return res;
+        alert = res;
       }
-    } else return false;
+    }
+
+    if (alert && this.settings.sound) {
+      this.audioService.play(this.alarmKey);
+    } else {
+      this.audioService.stop(this.alarmKey);
+    }
+
+    return {
+      ...event,
+      alert,
+      radius,
+    };
   }
 }

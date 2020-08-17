@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { tileLayer, latLng, circle, polygon, marker, icon } from 'leaflet';
+import { Component, OnDestroy } from '@angular/core';
+import { tileLayer, latLng, circle, icon } from 'leaflet';
 import { Drift_Marker } from 'leaflet-drift-marker';
-import { DeviceService, ThemeService } from 'src/app/shared';
-import { catchError, filter, tap, takeUntil, takeWhile } from 'rxjs/operators';
+import { DeviceService, ThemeService, SettingsService, DeviceEvent } from '../../../shared';
+import { catchError, filter, tap, takeWhile } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
@@ -25,7 +25,6 @@ export class V2vConnectComponent implements OnDestroy {
   circle = circle([8.80612408376523, 76.76209625835338], { radius: 100 });
   constructor(
     private deviceService: DeviceService,
-    private router: Router,
     private themeService: ThemeService
   ) {
     this.drawerOptions = {
@@ -46,10 +45,6 @@ export class V2vConnectComponent implements OnDestroy {
       .pipe(
         catchError(async (err) => {
           await this.themeService.toast(err);
-
-          setTimeout(() => {
-            this.router.navigateByUrl('setup');
-          }, 1000);
           return err;
         }),
         filter((x) => !!x),
@@ -65,7 +60,7 @@ export class V2vConnectComponent implements OnDestroy {
     this.alive = false;
   }
 
-  setupMarkers(data) {
+  setupMarkers(data:DeviceEvent) {
     let newFound = false;
 
     let currentLength = this.layers.length;
@@ -76,42 +71,45 @@ export class V2vConnectComponent implements OnDestroy {
     }
 
     if (data.alert) {
-      console.count('Alert');
-      let thisV = data.devices.filter((x) => x.thisV).pop();
+      let thisV = data.data.filter((x) => x.thisV).pop();
       this.layers.push({
         id: 'alert',
         layer: circle([thisV.lat, thisV.lng], { radius: data.radius * 1000 }),
       });
-      console.log(thisV);
     }
-    console.log(this.layers);
     if (currentLength !== this.layers.length) newFound = true;
 
-    data.devices.forEach((device) => {
-      let existing = this.layers.filter((x) => x.id == device.id).pop();
-      if (existing) {
-        existing.layer.slideTo([device.lat, device.lng], {
-          duration: 5000,
-          keepAtCenter: true,
-        });
-      } else {
-        newFound = true;
-        let layer = new Drift_Marker([device.lat, device.lng], {
-          icon: icon({
-            iconSize: [25, 41],
-            iconAnchor: [13, 41],
-            iconUrl: `assets/${
-              device.thisV ? 'this-vehicle' : 'nearby-vehicle'
-            }.png`,
-          }),
-        });
+    if (data && data.data) {
+      data.data.forEach((device) => {
+        let existing = this.layers.filter((x) => x.id == device.id).pop();
+        if (existing) {
+          existing.layer.slideTo([device.lat, device.lng], {
+            duration: 5000,
+            keepAtCenter: true,
+          });
+        } else {
+          newFound = true;
+          let layer = new Drift_Marker([device.lat, device.lng], {
+            icon: icon({
+              iconSize: [25, 41],
+              iconAnchor: [13, 41],
+              iconUrl: `assets/${
+                device.thisV ? 'this-vehicle' : 'nearby-vehicle'
+              }.png`,
+            }),
+          });
 
-        this.layers.push({ id: device.id, layer });
-      }
-    });
+          this.layers.push({ id: device.id, layer });
+        }
+      });
+    } else {
+      this.layers = [];
+      newFound = true;
+    }
     if (newFound) {
       console.count('newFound');
       this.layers$.next(this.layers.map((x) => x.layer));
     }
   }
+
 }

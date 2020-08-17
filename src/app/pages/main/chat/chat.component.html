@@ -1,0 +1,55 @@
+<ion-content padding>
+  <ion-grid class="ion-no-padding">
+    <ion-row
+      class="ion-no-padding ion-align-items-center ion-justify-content-center"
+    >
+      <ion-col class="ion-no-padding" size-lg="6" size-md="8" size-sm="12">
+        <div class="container">
+          <div
+            class="message-item"
+            [ngClass]="{ start: !(isMyMessage$(msg) | async) }"
+            *ngFor="let msg of messages$ | async"
+          >
+            <div class="message-avatar">
+              <img class="user-img" [src]="msg.photoURL" alt="" src="" />
+            </div>
+            <div class="message">
+              <div class="from">
+                {{ msg.displayName }}
+              </div>
+              <div class="content">
+                <span>
+                  {{ msg.text }}
+                </span>
+              </div>
+              <div class="time">
+                {{ msg.createdAt | date: "dd/MM/yy HH:mm:ss" }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>
+<ion-footer no-border>
+  <ion-grid class="ion-no-padding">
+    <ion-row
+      class="ion-no-padding ion-align-items-center ion-justify-content-center"
+    >
+      <ion-col class="ion-no-padding" size-lg="6" size-md="8" size-sm="12">
+        <div class="input-wrap">
+          <textarea
+            placeholder="Enter your message!"
+            [formControl]="chatInput"
+            (keyup.enter)="sendMessage()"
+          >
+          </textarea>
+          <ion-button shape="round" (click)="sendMessage()">
+            <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-footer>
