@@ -1,10 +1,15 @@
 import { Component, OnDestroy } from '@angular/core';
 import { tileLayer, latLng, circle, icon } from 'leaflet';
 import { Drift_Marker } from 'leaflet-drift-marker';
-import { DeviceService, ThemeService, SettingsService, DeviceEvent } from '../../../shared';
+import {
+  DeviceService,
+  ThemeService,
+  SettingsService,
+  DeviceEvent,
+} from '../../../shared';
 import { catchError, filter, tap, takeWhile } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-v2v-connect',
@@ -23,6 +28,7 @@ export class V2vConnectComponent implements OnDestroy {
   layers$: BehaviorSubject<any> = new BehaviorSubject([]);
   devices = [];
   circle = circle([8.80612408376523, 76.76209625835338], { radius: 100 });
+  deviceSubscription: Subscription;
   constructor(
     private deviceService: DeviceService,
     private themeService: ThemeService
@@ -35,14 +41,16 @@ export class V2vConnectComponent implements OnDestroy {
     };
   }
   ngOnDestroy(): void {
-    console.count('ngOnDestroy');
+    this.alive = false;
   }
 
   ionViewDidEnter(): void {
     this.alive = true;
-    console.count('ionViewDidEnter');
-    this.deviceService.event$
+    if (this.deviceSubscription) this.deviceSubscription.unsubscribe();
+
+    this.deviceSubscription = this.deviceService.event$
       .pipe(
+        takeWhile(() => this.alive),
         catchError(async (err) => {
           await this.themeService.toast(err);
           return err;
@@ -50,8 +58,7 @@ export class V2vConnectComponent implements OnDestroy {
         filter((x) => !!x),
         tap((x: any) => {
           this.setupMarkers(x);
-        }),
-        takeWhile(() => this.alive)
+        })
       )
       .subscribe();
   }
@@ -60,7 +67,9 @@ export class V2vConnectComponent implements OnDestroy {
     this.alive = false;
   }
 
-  setupMarkers(data:DeviceEvent) {
+  setupMarkers(data: DeviceEvent) {
+    console.log('setupMarkers', data);
+
     let newFound = false;
 
     let currentLength = this.layers.length;
@@ -74,22 +83,24 @@ export class V2vConnectComponent implements OnDestroy {
       let thisV = data.data.filter((x) => x.thisV).pop();
       this.layers.push({
         id: 'alert',
-        layer: circle([thisV.lat, thisV.lng], { radius: data.radius * 1000 }),
+        layer: circle([thisV.latitude, thisV.longitude], {
+          radius: data.radius * 1000,
+        }),
       });
     }
     if (currentLength !== this.layers.length) newFound = true;
 
     if (data && data.data) {
       data.data.forEach((device) => {
-        let existing = this.layers.filter((x) => x.id == device.id).pop();
+        let existing = this.layers.filter((x) => x.id == device.ip).pop();
         if (existing) {
-          existing.layer.slideTo([device.lat, device.lng], {
+          existing.layer.slideTo([device.latitude, device.longitude], {
             duration: 5000,
             keepAtCenter: true,
           });
         } else {
           newFound = true;
-          let layer = new Drift_Marker([device.lat, device.lng], {
+          let layer = new Drift_Marker([device.latitude, device.longitude], {
             icon: icon({
               iconSize: [25, 41],
               iconAnchor: [13, 41],
@@ -99,7 +110,7 @@ export class V2vConnectComponent implements OnDestroy {
             }),
           });
 
-          this.layers.push({ id: device.id, layer });
+          this.layers.push({ id: device.ip, layer });
         }
       });
     } else {
@@ -111,5 +122,4 @@ export class V2vConnectComponent implements OnDestroy {
       this.layers$.next(this.layers.map((x) => x.layer));
     }
   }
-
 }

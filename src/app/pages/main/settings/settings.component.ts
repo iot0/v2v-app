@@ -49,6 +49,7 @@ export class SettingsComponent implements OnInit {
     this.createForm = this.fb.group({
       radius: [1, Validators.required],
       sound: [false],
+      demo: [false],
       deviceIp: ['', Validators.required],
     });
   }
@@ -59,6 +60,7 @@ export class SettingsComponent implements OnInit {
     this.createForm.patchValue({
       radius: data.radius,
       sound: data.sound,
+      demo: data.demo,
       deviceIp: data.deviceIp,
     });
   }

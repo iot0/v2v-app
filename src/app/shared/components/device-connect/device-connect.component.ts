@@ -1,10 +1,10 @@
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { DrawerComponent } from '../drawer/drawer.component';
-import { of, BehaviorSubject, Observable } from 'rxjs';
 import { DeviceService, DeviceData } from '../../services/device';
-import { map } from 'rxjs/operators';
 import { ThemeService } from '../../services/theme';
 import { SettingsService } from '../../services/settings';
+import { takeWhile } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-device-connect',
@@ -14,25 +14,30 @@ import { SettingsService } from '../../services/settings';
 export class DeviceConnectComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.isAlive = false;
+    console.count('DeviceConnectComponent ngOnDestroy');
   }
   @Input('drawer')
   drawer: DrawerComponent;
   isOpened: boolean;
   isAlive: boolean = true;
 
+  settingsSubscription: Subscription;
   constructor(
     public device: DeviceService,
     public settingsServices: SettingsService,
     private themeService: ThemeService
-  ) {
-    this.settingsServices.settings$.subscribe((x) => {
-      if (x && x.deviceIp) {
-        this.onAddIp(x.deviceIp);
-      }
-    });
-  }
+  ) {}
 
   ngOnInit() {
+    if (this.settingsSubscription) this.settingsSubscription.unsubscribe();
+    this.settingsSubscription = this.settingsServices.settings$
+      .pipe(takeWhile(() => this.isAlive))
+      .subscribe((x) => {
+        if (x && (x.deviceIp || x.demo)) {
+          this.onAddIp(x);
+        }
+      });
+
     if (this.drawer) {
       this.drawer.onChange.subscribe((change) => {
         this.onDrawerStateChange(change);
@@ -50,16 +55,9 @@ export class DeviceConnectComponent implements OnInit, OnDestroy {
         break;
     }
   }
-  async onAddIp(ip) {
-    if (ip && ip != '') {
-      try {
-        let data = await this.device.setIp(ip);
-        console.log(data);
-        await this.themeService.toast('Device connected successfully :)');
-      } catch (err) {
-        this.themeService.toast('Sorry something went wrong :( Try Again !');
-      }
-    }
+  async onAddIp(settings) {
+    console.log('settings', settings);
+    let data = await this.device.setIp(settings);
   }
   deviceCount(data: DeviceData[]) {
     if (!data) return 0;

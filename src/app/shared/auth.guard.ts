@@ -27,14 +27,12 @@ export class AuthGuard implements CanActivate, CanLoad {
     | Promise<boolean | UrlTree>
     | boolean
     | UrlTree {
-    console.log('canActivate');
     return this.validation(next.routeConfig.path);
   }
   canLoad(
     route: Route,
     segments: UrlSegment[]
   ): Observable<boolean> | Promise<boolean> | boolean {
-    console.log('canLoad');
     return this.validation(route.path);
   }
 
@@ -42,7 +40,6 @@ export class AuthGuard implements CanActivate, CanLoad {
     return this.auth.auth$.pipe(
       take(1),
       map((x) => {
-        console.log('user', x);
         if (x) {
           // LoggedIn
           if (path === 'login') {

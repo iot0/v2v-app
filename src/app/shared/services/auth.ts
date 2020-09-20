@@ -11,7 +11,6 @@ export class AuthService {
   user$: BehaviorSubject<any> = new BehaviorSubject(null);
   constructor(private firebase: FirebaseService, private router: Router) {
     this.auth$.subscribe((u) => {
-      console.log('this.auth$.subscribe', u);
       this.user$.next(u);
     });
   }
@@ -22,8 +21,6 @@ export class AuthService {
         return Observable.create((obs: Observer<any>) => {
           app.auth().onAuthStateChanged(
             (u) => {
-              console.count('onAuthStateChanged');
-              console.log(u);
               if (u) {
                 obs.next(u);
               } else {
@@ -54,7 +51,6 @@ export class AuthService {
       // const provider = new (app.auth() as any).GoogleAuthProvider();
       const credential = await app.auth().signInWithPopup(provider);
       // const credential = await firebase.auth().signInWithPopup(provider);
-      console.log(credential);
       //return this.updateUserData(credential.user);
       return credential;
     } catch (err) {

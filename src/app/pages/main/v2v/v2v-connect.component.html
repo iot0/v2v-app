@@ -1,16 +1,18 @@
 <div
-  style="height: 100vh;"
+  style="height: 100vh"
   leaflet
   [leafletOptions]="options"
   [leafletLayers]="layers$ | async"
 ></div>
-<app-drawer [options]="drawerOptions" #drawer>
+<app-drawer [options]="drawerOptions" #drawer  *ngIf="alive">
   <ion-grid class="ion-no-padding">
     <ion-row
       class="ion-no-padding ion-align-items-center ion-justify-content-center"
     >
       <ion-col class="ion-no-padding" size-lg="4" size-md="6" size-sm="12">
-        <app-device-connect [drawer]="drawer"></app-device-connect>
+        <app-device-connect
+          [drawer]="drawer"
+        ></app-device-connect>
       </ion-col>
     </ion-row>
   </ion-grid>

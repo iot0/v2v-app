@@ -23,8 +23,6 @@ export class LoginComponent implements OnInit {
     try {
       let credential = await this.auth.googleSignIn();
 
-      console.log(credential);
-
       let uid = credential.user.uid;
 
       if (uid) {
@@ -34,7 +32,7 @@ export class LoginComponent implements OnInit {
       this.theme.toast(
         'Sorry something went wrong, please check your connection'
       );
-      console.log(err);
+      console.error(err);
     }
   }
 }
